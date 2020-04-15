@@ -1,5 +1,5 @@
 {
-    "name": "andre/upload",
+    "name": "apteles/paginator",
     "description": "Component to paginate data",
     "type": "library",
     "license": "MIT",
@@ -12,8 +12,7 @@
     ],
     "autoload": {
         "psr-4": {
-            "Apteles\\Paginator\\": "src",
-            "Livro\\Database\\": "Database"
+            "Apteles\\Paginator\\": "src"
         }
     },
     "require": {

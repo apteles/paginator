@@ -17,21 +17,25 @@ class Paginator
 
     private string $prefix = '';
 
-    public function __construct(array $config)
+    public function __construct(?array $config = null)
     {
         $this->init($config);
     }
 
-    public function init(array $config): void
+    public function init(?array $config = null): void
     {
         $this->loadConfigFile($config);
         $this->defineCurrentPage();
         $this->defineInitialPage();
     }
 
-    public function loadConfigFile(array $config): void
+    public function loadConfigFile(?array $config = null): void
     {
-        $this->config = $config;
+        if (!$config) {
+            $this->config = require __DIR__ . DIRECTORY_SEPARATOR . '..'. DIRECTORY_SEPARATOR .'config'. DIRECTORY_SEPARATOR.'paginator.php';
+        } else {
+            $this->config = $config;
+        }
     }
 
     public function getConfig(): array

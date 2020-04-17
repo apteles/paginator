@@ -114,8 +114,6 @@ class Paginator
             return $this->config['host'] . "/{$this->prefix}/{$this->config['urlKey']}/{$page}";
         };
 
-        $this->setPrefix('users');
-
         $buildUrl = $this->config['useURLFriendly'] ? $urlFriendly :  $urlQuery ;
 
         if ($this->total > $this->config['max_per_page']) {

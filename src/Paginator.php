@@ -15,21 +15,23 @@ class Paginator
 
     private int $total = 0;
 
-    public function __construct()
+    private string $prefix = '';
+
+    public function __construct(array $config)
     {
-        $this->init();
+        $this->init($config);
     }
 
-    public function init(): void
+    public function init(array $config): void
     {
-        $this->loadConfigFile();
+        $this->loadConfigFile($config);
         $this->defineCurrentPage();
         $this->defineInitialPage();
     }
 
-    public function loadConfigFile(): void
+    public function loadConfigFile(array $config): void
     {
-        $this->config = require __DIR__ . DIRECTORY_SEPARATOR . '..'. DIRECTORY_SEPARATOR .'config'. DIRECTORY_SEPARATOR.'paginator.php';
+        $this->config = $config;
     }
 
     public function getConfig(): array
@@ -39,18 +41,24 @@ class Paginator
 
     private function defineCurrentPage(): void
     {
-        $this->currentPage = \intval(\filter_input(INPUT_GET, $this->config['query'], FILTER_SANITIZE_SPECIAL_CHARS)) ?: 1;
+        $this->currentPage = \intval($this->config['handlerUrl']());
     }
 
     private function defineInitialPage(): void
     {
-        $this->start = ($this->config['max_per_page'] * $this->currentPage) - $this->config['max_per_page'];
-        $this->start = $this->start >= 1 ? $this->start : 1;
+        $start = ($this->config['max_per_page'] * $this->currentPage) - $this->config['max_per_page'];
+
+        $this->start = $start >= 1 ? $start : 1;
     }
 
     public function setTotal(int $total): void
     {
         $this->total = $total;
+    }
+
+    public function setPrefix(string $prefix): void
+    {
+        $this->prefix = $prefix;
     }
 
     private function getTotalPages(): float
@@ -66,14 +74,6 @@ class Paginator
 
         return $func($stdClass);
     }
-
-    // public function createPagination(object $conn, ?string $where = null, ?string $orderBy = null): object
-    // {
-    //     return $func($this->start, $this->config);
-    //     if (!$where && !$orderBy) {
-    //         return  $conn->query("SELECT * FROM users LIMIT {$this->start}, {$this->config['max_per_page']}");
-    //     }
-    // }
 
     private function isValidPage(): void
     {
@@ -100,37 +100,45 @@ class Paginator
 
         TEMPLATE;
 
+        $urlQuery = function (?int $page = null) {
+            $page = $page ?? $this->currentPage;
+            return $this->config['host'] . '?' .\http_build_query([$this->config['urlKey'] => $page]);
+        };
+
+        $urlFriendly = function (?int $page = null) {
+            $page = $page ?? $this->currentPage;
+            return $this->config['host'] . "/{$this->prefix}/{$this->config['urlKey']}/{$page}";
+        };
+
+        $this->setPrefix('users');
+
+        $buildUrl = $this->config['useURLFriendly'] ? $urlFriendly :  $urlQuery ;
+
         if ($this->total > $this->config['max_per_page']) {
+            if ($this->config['show_first_last_page']) {
+            }
+
             if ($this->currentPage > 1) {
-                print "<a href='?{$this->config['query']}=1'>{$this->config['links']['labels']['first_page']}</a>";
+                print "<a href='{$buildUrl(1)}'>{$this->config['links']['labels']['first_page']}</a>";
             }
 
             for ($i = $this->currentPage - $this->config['links']['max_links']; $i <= $this->currentPage -1 ;$i++) {
-                if ($this->currentPage === $i) {
-                    continue;
-                }
-
                 if ($i >= 2) {
-                    print "<a href='?{$this->config['query']}={$i}'>{$i}</a>";
+                    print "<a href='{$buildUrl((int) $i)}'>{$i}</a>";
                 }
             }
 
             print "<span>{$this->currentPage}</span>";
 
-            for ($i = $this->currentPage + 1; $i <= $this->getTotalPages() + $this->config['links']['max_links'];$i++) {
-                if ($i <= $this->getTotalPages() && $this->currentPage != $this->getTotalPages()) {
-                    print "<a href='?{$this->config['query']}={$i}'>{$i}</a>";
+            for ($i = $this->currentPage + 1; $i <= $this->currentPage + $this->config['links']['max_links'];$i++) {
+                if ($i <= $this->getTotalPages()) {
+                    print "<a href='{$buildUrl((int) $i)}'>{$i}</a>";
                 }
             }
 
-            // if ($this->currentPage == $this->getTotalPages()) {
-            //     print "<span>{$this->currentPage}</span>";
-            //     return;
-            // }
-
-            //  print "<a href='?{$this->config['query']}=". ($this->currentPage + 1) ."'>{$this->config['links']['labels']['next_page']}</a>";
-
-            print "<a href='?{$this->config['query']}=". $this->getTotalPages() ."'>{$this->config['links']['labels']['last_page']}</a>";
+            if ($this->currentPage != $this->getTotalPages()) {
+                print "<a href='{$buildUrl((int)  $this->getTotalPages())}'>{$this->config['links']['labels']['last_page']}</a>";
+            }
         }
     }
 

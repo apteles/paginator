@@ -6,9 +6,7 @@ return [
     'urlKey' => 'page',
     'useURLFriendly' => true, // This configuration should combine with **handlerUrl**
     'handlerUrl' => function () {
-        $uri = $_SERVER['PATH_INFO'] ?? '/page/1';
-
-        \preg_match('/\/page\/(\d+)/', $uri, $matches);
+        \preg_match('/\/page\/(\d+)/', $_SERVER['REQUEST_URI'], $matches);
         return $matches[1] ?? 1;
     },
     // 'handlerUrl' => function () {

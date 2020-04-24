@@ -11,7 +11,7 @@ class Paginator
 
     private int $currentPage;
 
-    private int $start = 1;
+    private int $offset = 0;
 
     private int $total = 0;
 
@@ -26,7 +26,7 @@ class Paginator
     {
         $this->loadConfigFile($config);
         $this->defineCurrentPage();
-        $this->defineInitialPage();
+        // $this->defineInitialPage();
     }
 
     public function loadConfigFile(?array $config = null): void
@@ -43,16 +43,21 @@ class Paginator
         return $this->config;
     }
 
+    public function setOffset(?int $offset = null): void
+    {
+        $this->offset = $this->defineInitialPage($offset);
+    }
+
     private function defineCurrentPage(): void
     {
         $this->currentPage = \intval($this->config['handlerUrl']());
     }
 
-    private function defineInitialPage(): void
-    {
-        $start = ($this->config['max_per_page'] * $this->currentPage) - $this->config['max_per_page'];
 
-        $this->start = $start >= 1 ? $start : 1;
+    private function defineInitialPage(?int $offset = null): int
+    {
+        $offset = ($this->currentPage * $offset) - $offset;
+        return $offset >= 1 ? $offset : 0;
     }
 
     public function setTotal(int $total): void
@@ -72,9 +77,12 @@ class Paginator
 
     public function getDataWithCallable(callable $func, ?int $maxPerPage = null): array
     {
+        $maxPerPage = $maxPerPage ? $this->config['max_per_page'] = $maxPerPage : $this->config['max_per_page'];
+
+        $this->setOffset($maxPerPage);
         $stdClass = new stdClass;
-        $stdClass->maxPerPage = $this->start;
-        $stdClass->start = $maxPerPage ?? $this->config['max_per_page'];
+        $stdClass->limit = $maxPerPage;
+        $stdClass->offset = $this->offset;
 
         return $func($stdClass);
     }
@@ -113,8 +121,6 @@ class Paginator
             $page = $page ?? $this->currentPage;
             return $this->config['host'] . "/{$this->prefix}/{$this->config['urlKey']}/{$page}";
         };
-
-        $this->setPrefix('users');
 
         $buildUrl = $this->config['useURLFriendly'] ? $urlFriendly :  $urlQuery ;
 
